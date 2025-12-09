@@ -1,33 +1,44 @@
-import logging
-from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
+import telebot
+import google.generativeai as genai
 
-# Включим логирование
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+# ==========================================
+# НАСТРОЙКИ (Вставь свои токены сюда)
+# ==========================================
+TELEGRAM_TOKEN = "7927640953:AAHWA1uxVxxhQR9VMNsMaVxiSpax6yUyXt8"
+GEMINI_API_KEY = "AIzaSyCUvrV7VspTaxtIhfXuJd4gnngOV9c7SzI"
 
-# Токен вашего бота (замените на свой)
-TOKEN = "7927640953:AAHWA1uxVxxhQR9VMNsMaVxiSpax6yUyXt8"
+# Настройка Gemini
+genai.configure(api_key=GEMINI_API_KEY)
 
-# Функция-обработчик для всех текстовых сообщений
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Повторяет сообщение пользователя."""
-    # Отправляем обратно тот же текст, что прислал пользователь
-    await update.message.reply_text(update.message.text)
+model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
-def main() -> None:
-    """Запуск бота."""
-    # Создаем приложение
-    application = Application.builder().token(TOKEN).build()
+# Настройка Telegram бота
+bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-    # Добавляем обработчик для текстовых сообщений
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+# Обработчик команды /start
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, "Привет! Я подключен к Gemini. Спроси меня о чем угодно.")
 
-    # Запускаем бота
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+# Обработчик любого текста
+@bot.message_handler(func=lambda message: True)
+def handle_message(message):
+    try:
+        # Отправляем боту сообщение "Печатает...", чтобы пользователь видел активность
+        bot.send_chat_action(message.chat.id, 'typing')
 
+        # Отправляем запрос в Gemini
+        response = model.generate_content(message.text)
+
+        # Отправляем ответ пользователю
+        # response.text содержит готовый ответ нейросети
+        bot.reply_to(message, response.text)
+
+    except Exception as e:
+        # Если возникла ошибка (например, фильтр безопасности Gemini), сообщаем об этом
+        bot.reply_to(message, f"Произошла ошибка или сработал фильтр безопасности.\nДетали: {e}")
+
+# Запуск постоянного опроса серверов Telegram
 if __name__ == '__main__':
-    main()
+    print("Бот запущен...")
+    bot.infinity_polling()
