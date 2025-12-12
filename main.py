@@ -4,8 +4,8 @@ import google.generativeai as genai
 # ==========================================
 # НАСТРОЙКИ (Вставь свои токены сюда)
 # ==========================================
-TELEGRAM_TOKEN = "7927640953:AAHWA1uxVxxhQR9VMNsMaVxiSpax6yUyXt8"
-GEMINI_API_KEY = "AIzaSyCUvrV7VspTaxtIhfXuJd4gnngOV9c7SzI"
+TELEGRAM_TOKEN = ""
+GEMINI_API_KEY = ""
 
 # Настройка Gemini
 genai.configure(api_key=GEMINI_API_KEY)
